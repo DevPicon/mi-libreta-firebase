@@ -12,10 +12,17 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import jp.wasabeef.glide.transformations.CropCircleTransformation;
 
 public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -24,6 +31,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     private Toolbar toolbar;
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle actionBarDrawerToggle;
+    private NavigationView navigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +44,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             Toast.makeText(MainActivity.this, "Inicio sesion", Toast.LENGTH_SHORT).show();
             setSupportToolbar();
             setNavigationDrawer();
+            setNavigationHeader(auth);
 
 
         } else {
@@ -49,6 +58,24 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         }
     }
 
+    private void setNavigationHeader(FirebaseAuth auth) {
+
+        View headerView = navigationView.getHeaderView(0);
+        ImageView imageViewHeader = (ImageView) headerView.findViewById(R.id.imageViewHeader);
+        TextView textViewNameHeader = (TextView) headerView.findViewById(R.id.textViewNameHeader);
+        TextView textViewEmailHeader = (TextView) headerView.findViewById(R.id.textViewEmailHeader);
+
+        FirebaseUser currentUser = auth.getCurrentUser();
+        textViewNameHeader.setText(currentUser.getDisplayName());
+        textViewEmailHeader.setText(currentUser.getEmail());
+        Glide.with(this)
+                .load(currentUser.getPhotoUrl())
+                .asBitmap()
+                .transform(new CropCircleTransformation(this))
+                .into(imageViewHeader);
+
+    }
+
     private void setSupportToolbar() {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitleTextColor(ContextCompat.getColor(MainActivity.this, android.R.color.white));
@@ -60,7 +87,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     private void setNavigationDrawer() {
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout_side_menu);
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_side_menu);
+        navigationView = (NavigationView) findViewById(R.id.nav_side_menu);
         actionBarDrawerToggle = new ActionBarDrawerToggle(
                 MainActivity.this,
                 drawerLayout, toolbar,
