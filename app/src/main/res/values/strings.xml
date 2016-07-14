@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Mi Libreta</string>
+    <string name="action_settings">Configuración</string>
 </resources>

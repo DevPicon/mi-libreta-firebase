@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/menu_group_1"
+        android:checkableBehavior="single">
+        <item
+            android:icon="@drawable/ic_home_white_48dp"
+            android:tint="@android:color/white"
+            android:title="Inicio" />
+        <item
+            android:icon="@drawable/ic_settings_white_48dp"
+            android:tint="@android:color/white"
+            android:title="Configuración" />
+    </group>
+
+    <group
+        android:id="@+id/menu_group_2"
+        android:checkableBehavior="single">
+        <item
+            android:icon="@drawable/ic_logout_white_48dp"
+            android:tint="@android:color/white"
+            android:title="Salir" />
+    </group>
+</menu>
