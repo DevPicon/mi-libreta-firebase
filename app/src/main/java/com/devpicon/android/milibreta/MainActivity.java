@@ -9,6 +9,8 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -18,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.devpicon.android.milibreta.holders.NoteFirebaseRecyclerAdapter;
 import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -40,6 +43,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     private DatabaseReference databaseReference;
     private FirebaseAuth firebaseAuth;
+    private NoteFirebaseRecyclerAdapter noteFirebaseRecyclerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +58,14 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             setSupportToolbar();
             setNavigationDrawer();
             setNavigationHeader();
+
+            // Implementacion de FirebaseUI-Database
+            RecyclerView noteRecyclerView = (RecyclerView) findViewById(R.id.note_recycler_view);
+            noteRecyclerView.setHasFixedSize(true);
+            noteRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+
+            noteFirebaseRecyclerAdapter = new NoteFirebaseRecyclerAdapter(databaseReference);
+            noteRecyclerView.setAdapter(noteFirebaseRecyclerAdapter);
 
 
         } else {
@@ -193,5 +205,11 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         } else {
             return email;
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        noteFirebaseRecyclerAdapter.cleanup();
     }
 }
