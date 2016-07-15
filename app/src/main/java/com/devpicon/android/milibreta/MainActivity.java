@@ -2,12 +2,12 @@ package com.devpicon.android.milibreta;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -18,9 +18,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import jp.wasabeef.glide.transformations.CropCircleTransformation;
 
@@ -33,18 +38,22 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     private ActionBarDrawerToggle actionBarDrawerToggle;
     private NavigationView navigationView;
 
+    private DatabaseReference databaseReference;
+    private FirebaseAuth firebaseAuth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        if (auth.getCurrentUser() != null) {
+        databaseReference = FirebaseDatabase.getInstance().getReference();
+        firebaseAuth = FirebaseAuth.getInstance();
+        if (firebaseAuth.getCurrentUser() != null) {
             // usuario logueado
             Toast.makeText(MainActivity.this, "Inicio sesion", Toast.LENGTH_SHORT).show();
             setSupportToolbar();
             setNavigationDrawer();
-            setNavigationHeader(auth);
+            setNavigationHeader();
 
 
         } else {
@@ -58,14 +67,14 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         }
     }
 
-    private void setNavigationHeader(FirebaseAuth auth) {
+    private void setNavigationHeader() {
 
         View headerView = navigationView.getHeaderView(0);
         ImageView imageViewHeader = (ImageView) headerView.findViewById(R.id.imageViewHeader);
         TextView textViewNameHeader = (TextView) headerView.findViewById(R.id.textViewNameHeader);
         TextView textViewEmailHeader = (TextView) headerView.findViewById(R.id.textViewEmailHeader);
 
-        FirebaseUser currentUser = auth.getCurrentUser();
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         textViewNameHeader.setText(currentUser.getDisplayName());
         textViewEmailHeader.setText(currentUser.getEmail());
         Glide.with(this)
@@ -97,7 +106,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         if (navigationView != null) {
             navigationView.setNavigationItemSelectedListener(MainActivity.this);
         }
-        onNavigationItemSelected(null);
+        //onNavigationItemSelected(null);
     }
 
     @Override
@@ -106,6 +115,15 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
+                FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+                User user = new User(
+                        usernameFromEmail(currentUser.getEmail()),
+                        currentUser.getEmail(),
+                        currentUser.getDisplayName(),
+                        currentUser.getPhotoUrl().toString());
+
+                databaseReference.child("users").child(currentUser.getUid()).setValue(user);
+
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             } else {
@@ -125,7 +143,28 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        return false;
+
+        switch (item.getItemId()) {
+            case R.id.nav_item_logout:
+                signOut();
+                break;
+            default:
+                break;
+
+        }
+
+        drawerLayout.closeDrawers();
+        return true;
+    }
+
+    private void signOut() {
+        AuthUI.getInstance().signOut(MainActivity.this).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                startActivity(new Intent(MainActivity.this, MainActivity.class));
+                finish();
+            }
+        });
     }
 
     /**
@@ -135,12 +174,24 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        actionBarDrawerToggle.onConfigurationChanged(newConfig);
+        if (actionBarDrawerToggle != null) {
+            actionBarDrawerToggle.onConfigurationChanged(newConfig);
+        }
     }
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        actionBarDrawerToggle.syncState();
+        if (actionBarDrawerToggle != null) {
+            actionBarDrawerToggle.syncState();
+        }
+    }
+
+    private String usernameFromEmail(String email) {
+        if (email.contains("@")) {
+            return email.split("@")[0];
+        } else {
+            return email;
+        }
     }
 }
