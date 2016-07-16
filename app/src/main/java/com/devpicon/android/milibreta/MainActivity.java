@@ -2,6 +2,7 @@ package com.devpicon.android.milibreta;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -9,7 +10,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -61,19 +61,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             setNavigationDrawer();
             setNavigationHeader();
             setFirebaseRecyclerView();
-
-            FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.fab_add_note);
-            floatingActionButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Toast.makeText(MainActivity.this, "nota añadida!!", Toast.LENGTH_SHORT).show();
-                    databaseReference.child("notes").push().setValue(
-                            new Note(
-                                    firebaseAuth.getCurrentUser().getDisplayName(),
-                                    "Una nota",
-                                    firebaseAuth.getCurrentUser().getUid()));
-                }
-            });
+            setFAB();
 
 
         } else {
@@ -85,6 +73,21 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                             .setProviders(AuthUI.GOOGLE_PROVIDER)
                             .build(), RC_SIGN_IN);
         }
+    }
+
+    private void setFAB() {
+        FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.fab_add_note);
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(MainActivity.this, "nota añadida!!", Toast.LENGTH_SHORT).show();
+                databaseReference.child("notes").push().setValue(
+                        new Note(
+                                firebaseAuth.getCurrentUser().getDisplayName(),
+                                "Una nota",
+                                firebaseAuth.getCurrentUser().getUid()));
+            }
+        });
     }
 
     private void setFirebaseRecyclerView() {
@@ -228,6 +231,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        noteFirebaseRecyclerAdapter.cleanup();
+        if (noteFirebaseRecyclerAdapter != null) {
+            noteFirebaseRecyclerAdapter.cleanup();
+        }
     }
 }
