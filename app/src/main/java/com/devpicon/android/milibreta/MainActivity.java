@@ -21,8 +21,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.devpicon.android.milibreta.fragments.AddNoteDialogFragment;
 import com.devpicon.android.milibreta.holders.NoteFirebaseRecyclerAdapter;
-import com.devpicon.android.milibreta.models.Note;
 import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -81,11 +81,14 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             @Override
             public void onClick(View view) {
                 Toast.makeText(MainActivity.this, "nota añadida!!", Toast.LENGTH_SHORT).show();
-                databaseReference.child("notes").push().setValue(
-                        new Note(
-                                firebaseAuth.getCurrentUser().getDisplayName(),
-                                "Una nota",
-                                firebaseAuth.getCurrentUser().getUid()));
+                //TODO
+
+                // Create and show the dialog.
+                AddNoteDialogFragment dialog = new AddNoteDialogFragment();
+                dialog.show(getFragmentManager(), AddNoteDialogFragment.class.getSimpleName());
+
+
+
             }
         });
     }

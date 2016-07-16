@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Mi Libreta</string>
     <string name="action_settings">Configuración</string>
+    <string name="txt_add_note">Agregue el texto</string>
+    <string name="cancel">Cancelar</string>
+    <string name="add">Agregar</string>
 </resources>

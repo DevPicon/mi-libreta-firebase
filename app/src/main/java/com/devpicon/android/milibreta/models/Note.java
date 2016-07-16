@@ -8,14 +8,18 @@ public class Note {
     public String name;
     public String text;
     public String uid;
+    public String timestamp;
+    public String userImageUrl;
 
-    public Note(){
+    public Note() {
     }
 
-    public Note(String name, String text, String uid){
+    public Note(String name, String text, String uid, String timestamp, String userImageUrl) {
         this.name = name;
         this.text = text;
         this.uid = uid;
+        this.timestamp = timestamp;
+        this.userImageUrl = userImageUrl;
     }
 
     public String getName() {
@@ -30,4 +34,11 @@ public class Note {
         return uid;
     }
 
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public String getUserImageUrl() {
+        return userImageUrl;
+    }
 }
