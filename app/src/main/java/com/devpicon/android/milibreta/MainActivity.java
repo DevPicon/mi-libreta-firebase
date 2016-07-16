@@ -3,6 +3,7 @@ package com.devpicon.android.milibreta;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.devpicon.android.milibreta.holders.NoteFirebaseRecyclerAdapter;
+import com.devpicon.android.milibreta.models.Note;
 import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -58,14 +60,20 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             setSupportToolbar();
             setNavigationDrawer();
             setNavigationHeader();
+            setFirebaseRecyclerView();
 
-            // Implementacion de FirebaseUI-Database
-            RecyclerView noteRecyclerView = (RecyclerView) findViewById(R.id.note_recycler_view);
-            noteRecyclerView.setHasFixedSize(true);
-            noteRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-
-            noteFirebaseRecyclerAdapter = new NoteFirebaseRecyclerAdapter(databaseReference);
-            noteRecyclerView.setAdapter(noteFirebaseRecyclerAdapter);
+            FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.fab_add_note);
+            floatingActionButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Toast.makeText(MainActivity.this, "nota añadida!!", Toast.LENGTH_SHORT).show();
+                    databaseReference.child("notes").push().setValue(
+                            new Note(
+                                    firebaseAuth.getCurrentUser().getDisplayName(),
+                                    "Una nota",
+                                    firebaseAuth.getCurrentUser().getUid()));
+                }
+            });
 
 
         } else {
@@ -77,6 +85,16 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                             .setProviders(AuthUI.GOOGLE_PROVIDER)
                             .build(), RC_SIGN_IN);
         }
+    }
+
+    private void setFirebaseRecyclerView() {
+        // Implementacion de FirebaseUI-Database
+        RecyclerView noteRecyclerView = (RecyclerView) findViewById(R.id.note_recycler_view);
+        noteRecyclerView.setHasFixedSize(true);
+        noteRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+
+        noteFirebaseRecyclerAdapter = new NoteFirebaseRecyclerAdapter(databaseReference.child("notes"));
+        noteRecyclerView.setAdapter(noteFirebaseRecyclerAdapter);
     }
 
     private void setNavigationHeader() {

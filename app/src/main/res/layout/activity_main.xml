@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:orientation="vertical"
     android:layout_height="match_parent"
     tools:context="com.devpicon.android.milibreta.MainActivity">
 
@@ -22,5 +23,8 @@
             app:headerLayout="@layout/nav_header_main"
             app:menu="@menu/side_menu" />
 
+
+
     </android.support.v4.widget.DrawerLayout>
+
 </LinearLayout>

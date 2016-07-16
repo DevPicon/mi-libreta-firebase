@@ -5,7 +5,18 @@ package com.devpicon.android.milibreta.models;
  */
 public class Note {
 
-    String name;
+    public String name;
+    public String text;
+    public String uid;
+
+    public Note(){
+    }
+
+    public Note(String name, String text, String uid){
+        this.name = name;
+        this.text = text;
+        this.uid = uid;
+    }
 
     public String getName() {
         return name;
@@ -17,18 +28,6 @@ public class Note {
 
     public String getUid() {
         return uid;
-    }
-
-    String text;
-    String uid;
-
-    public Note(){
-    }
-
-    public Note(String name, String text, String uid){
-        this.name = name;
-        this.text = text;
-        this.uid = uid;
     }
 
 }
