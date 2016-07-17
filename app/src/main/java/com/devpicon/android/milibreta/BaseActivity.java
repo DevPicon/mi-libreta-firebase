@@ -15,11 +15,17 @@ public class BaseActivity extends AppCompatActivity {
 
     private ProgressDialog progressDialog;
 
-    public void showProgressDialog() {
+    protected void showProgressDialog() {
         if (progressDialog == null) {
             progressDialog = new ProgressDialog(this);
             progressDialog.setMessage("Cargando...");
             progressDialog.setIndeterminate(true);
+        }
+    }
+
+    protected void hideProgressDialog() {
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
         }
     }
 

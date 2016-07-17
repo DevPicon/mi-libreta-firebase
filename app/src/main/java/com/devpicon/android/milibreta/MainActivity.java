@@ -1,8 +1,13 @@
 package com.devpicon.android.milibreta;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -26,18 +31,36 @@ import com.devpicon.android.milibreta.holders.NoteFirebaseRecyclerAdapter;
 import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.File;
+import java.util.List;
+import java.util.UUID;
 
 import jp.wasabeef.glide.transformations.CropCircleTransformation;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
-public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener, EasyPermissions.PermissionCallbacks {
 
     private static final int RC_SIGN_IN = 100;
+    private static final int RC_TAKE_PICTURE = 101;
+    private static final int RC_STORAGE_AND_CAMERA_PERMS = 102;
+
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int RC_CAMERA_PERMS = 103;
+
+    private Uri fileUri = null;
+
     private Toolbar toolbar;
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle actionBarDrawerToggle;
@@ -45,6 +68,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     private DatabaseReference databaseReference;
     private FirebaseAuth firebaseAuth;
+    private StorageReference storageReference;
     private NoteFirebaseRecyclerAdapter noteFirebaseRecyclerAdapter;
 
     @Override
@@ -61,7 +85,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             setNavigationDrawer();
             setNavigationHeader();
             setFirebaseRecyclerView();
-            setFAB();
+            setAddNoteFAB();
+            setAddPictureFAB();
 
 
         } else {
@@ -69,28 +94,62 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             startActivityForResult(
                     AuthUI.getInstance()
                             .createSignInIntentBuilder()
-                            .setLogo(R.drawable.gdgopen_loguito)
+                            .setLogo(R.drawable.milibreta_logo)
                             .setProviders(AuthUI.GOOGLE_PROVIDER)
                             .build(), RC_SIGN_IN);
         }
     }
 
-    private void setFAB() {
+    private void setAddNoteFAB() {
         FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.fab_add_note);
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Toast.makeText(MainActivity.this, "nota añadida!!", Toast.LENGTH_SHORT).show();
-                //TODO
-
                 // Create and show the dialog.
                 AddNoteDialogFragment dialog = new AddNoteDialogFragment();
                 dialog.show(getFragmentManager(), AddNoteDialogFragment.class.getSimpleName());
 
 
-
             }
         });
+    }
+
+    private void setAddPictureFAB() {
+        FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.fab_add_picture);
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                launchCamera();
+            }
+        });
+    }
+
+    @AfterPermissionGranted(RC_STORAGE_AND_CAMERA_PERMS)
+    private void launchCamera() {
+        Log.d(TAG, "launchCamera");
+
+        // Check that we have permission to read images from external storage.
+        String[] permissions = {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && !EasyPermissions.hasPermissions(this, permissions)) {
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_storage_camera),
+                    RC_STORAGE_AND_CAMERA_PERMS, permissions);
+            return;
+        }
+
+
+        // Create intent
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // Choose file storage location
+        File file = new File(Environment.getExternalStorageDirectory(), UUID.randomUUID().toString() + ".jpg");
+        fileUri = Uri.fromFile(file);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+
+        // Launch intent
+        startActivityForResult(takePictureIntent, RC_TAKE_PICTURE);
+
     }
 
     private void setFirebaseRecyclerView() {
@@ -165,9 +224,50 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             } else {
                 Log.e(TAG, "Ocurrió un error durante el login");
             }
+        } else if (requestCode == RC_TAKE_PICTURE) {
+            if (resultCode == RESULT_OK) {
+                if (fileUri != null) {
+                    Log.d(TAG, "Taking picture succeded");
+                    uploadFromUri(fileUri);
+                } else {
+                    Log.w(TAG, "File URI is null");
+                }
+            } else {
+                Toast.makeText(this, "Taking picture failed.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
+    private void uploadFromUri(Uri fileUri) {
+        Log.d(TAG, "uploadFromUri:src:" + fileUri.toString());
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        storageReference = storage.getReferenceFromUrl("gs://mi-libreta.appspot.com");
+
+        final StorageReference photoReference = storageReference.child("photos")
+                .child(fileUri.getLastPathSegment());
+        showProgressDialog();
+        Log.d(TAG, "uploadFromUri:dst:" + photoReference.getPath());
+        photoReference.putFile(fileUri).addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.w(TAG, "uploadFromUri:onFailure", e);
+                hideProgressDialog();
+                Toast.makeText(MainActivity.this, "Error: upload failed",
+                        Toast.LENGTH_SHORT).show();
+
+            }
+        }).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Log.d(TAG, "uploadFromUri:onSuccess");
+                Toast.makeText(MainActivity.this, "upload completed!", Toast.LENGTH_SHORT).show();
+                // Get the public download URL
+                // TODO: Save public url
+                taskSnapshot.getMetadata().getDownloadUrl();
+                hideProgressDialog();
+            }
+        });
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -237,5 +337,21 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         if (noteFirebaseRecyclerAdapter != null) {
             noteFirebaseRecyclerAdapter.cleanup();
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> perms) {
+
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> perms) {
+
     }
 }
