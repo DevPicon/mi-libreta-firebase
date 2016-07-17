@@ -4,4 +4,6 @@
     <string name="txt_add_note">Agregue el texto</string>
     <string name="cancel">Cancelar</string>
     <string name="add">Agregar</string>
+    <string name="rationale_storage_camera">Se tomara foto y cargara en el storage</string>
+    <string name="permision_camera">Pidiendo permisos para la camara</string>
 </resources>
