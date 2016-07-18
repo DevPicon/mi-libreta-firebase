@@ -28,6 +28,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.devpicon.android.milibreta.fragments.AddNoteDialogFragment;
 import com.devpicon.android.milibreta.holders.NoteFirebaseRecyclerAdapter;
+import com.devpicon.android.milibreta.models.Note;
 import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -43,6 +44,8 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -60,6 +63,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     private static final int RC_CAMERA_PERMS = 103;
 
     private Uri fileUri = null;
+    private Uri downloadUrl = null;
 
     private Toolbar toolbar;
     private DrawerLayout drawerLayout;
@@ -251,6 +255,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.w(TAG, "uploadFromUri:onFailure", e);
+                downloadUrl = null;
                 hideProgressDialog();
                 Toast.makeText(MainActivity.this, "Error: upload failed",
                         Toast.LENGTH_SHORT).show();
@@ -260,13 +265,32 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 Log.d(TAG, "uploadFromUri:onSuccess");
-                Toast.makeText(MainActivity.this, "upload completed!", Toast.LENGTH_SHORT).show();
                 // Get the public download URL
-                // TODO: Save public url
-                taskSnapshot.getMetadata().getDownloadUrl();
+                downloadUrl = taskSnapshot.getMetadata().getDownloadUrl();
+
+                savePictureUrlAsANote(downloadUrl);
+
+                Toast.makeText(MainActivity.this, "upload completed! " + downloadUrl.toString(), Toast.LENGTH_SHORT).show();
                 hideProgressDialog();
             }
         });
+    }
+
+    private void savePictureUrlAsANote(Uri downloadUrl) {
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+
+        //TODO: Corregir a  una mejor forma de obtener el timestamp
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formattedDate = df.format(new Date());
+
+        databaseReference.child("notes").push().setValue(
+                new Note(
+                        currentUser.getDisplayName(),
+                        "Foto",
+                        downloadUrl.toString(),
+                        currentUser.getUid(),
+                        formattedDate,
+                        currentUser.getPhotoUrl().toString()));
     }
 
     @Override

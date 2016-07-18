@@ -28,6 +28,11 @@
             android:text="Esta es una nota!"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
+        <ImageView
+            android:id="@+id/img_item_picture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

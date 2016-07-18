@@ -22,6 +22,7 @@ public class NoteFirebaseRecyclerAdapter extends FirebaseRecyclerAdapter<Note, N
         viewHolder.setText(model.getText());
         viewHolder.setName(model.getName());
         viewHolder.setTimestamp(model.getTimestamp());
-        viewHolder.setImage(model.getUserImageUrl());
+        viewHolder.setAvatar(model.getUserImageUrl());
+        viewHolder.setPicture(model.getPictureUrl());
     }
 }

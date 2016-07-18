@@ -36,13 +36,25 @@ public class NoteViewHolder extends RecyclerView.ViewHolder {
         textViewTimestamp.setText(timestamp);
     }
 
-    public void setImage(String url) {
+    public void setAvatar(String url) {
         ImageView imageViewAvatar = (ImageView) view.findViewById(R.id.img_item_avatar);
         Glide.with(view.getContext())
                 .load(url)
                 .asBitmap()
                 .transform(new CropCircleTransformation(view.getContext()))
                 .into(imageViewAvatar);
+    }
+
+    public void setPicture(String url) {
+        if (url != null) {
+            ImageView imageViewAvatar = (ImageView) view.findViewById(R.id.img_item_picture);
+            Glide.with(view.getContext())
+                    .load(url)
+                    .centerCrop()
+                    .placeholder(R.drawable.default_image)
+                    .crossFade()
+                    .into(imageViewAvatar);
+        }
     }
 
 }

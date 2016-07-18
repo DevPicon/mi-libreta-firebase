@@ -5,6 +5,7 @@ package com.devpicon.android.milibreta.models;
  */
 public class Note {
 
+    public String pictureUrl;
     public String name;
     public String text;
     public String uid;
@@ -17,10 +18,22 @@ public class Note {
     public Note(String name, String text, String uid, String timestamp, String userImageUrl) {
         this.name = name;
         this.text = text;
+        this.pictureUrl = null;
         this.uid = uid;
         this.timestamp = timestamp;
         this.userImageUrl = userImageUrl;
     }
+
+    public Note(String name, String text, String pictureUrl, String uid, String timestamp, String userImageUrl) {
+        this.name = name;
+        this.text = text;
+        this.pictureUrl = pictureUrl;
+        this.uid = uid;
+        this.timestamp = timestamp;
+        this.userImageUrl = userImageUrl;
+    }
+
+
 
     public String getName() {
         return name;
@@ -40,5 +53,9 @@ public class Note {
 
     public String getUserImageUrl() {
         return userImageUrl;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
     }
 }
