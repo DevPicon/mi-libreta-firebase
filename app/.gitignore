@@ -1,3 +1,4 @@
 /build
 *.apk
 .apk
+google-service.json
