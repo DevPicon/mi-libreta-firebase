@@ -1,7 +1,9 @@
-package com.devpicon.android.milibreta;
+package com.devpicon.android.milibreta.notes;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
@@ -26,20 +28,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.devpicon.android.milibreta.fragments.AddNoteDialogFragment;
-import com.devpicon.android.milibreta.holders.NoteFirebaseRecyclerAdapter;
+import com.devpicon.android.milibreta.BaseActivity;
+import com.devpicon.android.milibreta.Constants;
+import com.devpicon.android.milibreta.R;
+import com.devpicon.android.milibreta.addNote.AddNoteDialogFragment;
+import com.devpicon.android.milibreta.addNote.NoteFirebaseRecyclerAdapter;
+import com.devpicon.android.milibreta.app.MiLibretaApplication;
+import com.devpicon.android.milibreta.login.LoginActivity;
 import com.devpicon.android.milibreta.models.Note;
-import com.devpicon.android.milibreta.models.User;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -53,9 +55,11 @@ import jp.wasabeef.glide.transformations.CropCircleTransformation;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener, EasyPermissions.PermissionCallbacks {
-
-    private static final int RC_SIGN_IN = 100;
+public class MainActivity
+        extends BaseActivity
+        implements NavigationView.OnNavigationItemSelectedListener,
+        EasyPermissions.PermissionCallbacks {
+    ;
     private static final int RC_TAKE_PICTURE = 101;
     private static final int RC_STORAGE_AND_CAMERA_PERMS = 102;
 
@@ -70,38 +74,32 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     private ActionBarDrawerToggle actionBarDrawerToggle;
     private NavigationView navigationView;
 
-    private DatabaseReference databaseReference;
-    private FirebaseAuth firebaseAuth;
-    private StorageReference storageReference;
+    private DatabaseReference notesDatabaseReference;
+    private StorageReference photoStorageReference;
     private NoteFirebaseRecyclerAdapter noteFirebaseRecyclerAdapter;
+
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        databaseReference = FirebaseDatabase.getInstance().getReference();
-        firebaseAuth = FirebaseAuth.getInstance();
-        if (firebaseAuth.getCurrentUser() != null) {
-            // usuario logueado
-            Toast.makeText(MainActivity.this, "Inicio sesion", Toast.LENGTH_SHORT).show();
-            setSupportToolbar();
-            setNavigationDrawer();
-            setNavigationHeader();
-            setFirebaseRecyclerView();
-            setAddNoteFAB();
-            setAddPictureFAB();
+        MiLibretaApplication application = (MiLibretaApplication) getApplicationContext();
+        photoStorageReference = application.getPhotoStorageReference();
+        notesDatabaseReference = application.getChildNoteReference();
+        sharedPreferences = getApplication().getSharedPreferences(Constants.MI_LIBRETA_PREFERENCES, Context.MODE_PRIVATE);
+
+        // usuario logueado
+        showMessageToast("Inicio sesion");
+        setSupportToolbar();
+        setNavigationDrawer();
+        setNavigationHeader();
+        setFirebaseRecyclerView();
+        setAddNoteFAB();
+        setAddPictureFAB();
 
 
-        } else {
-            // generamos la pantalla de logueo
-            startActivityForResult(
-                    AuthUI.getInstance()
-                            .createSignInIntentBuilder()
-                            .setLogo(R.drawable.milibreta_logo)
-                            .setProviders(AuthUI.GOOGLE_PROVIDER)
-                            .build(), RC_SIGN_IN);
-        }
     }
 
     private void setAddNoteFAB() {
@@ -109,7 +107,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(MainActivity.this, "nota añadida!!", Toast.LENGTH_SHORT).show();
+                showMessageToast("nota añadida!!");
                 // Create and show the dialog.
                 AddNoteDialogFragment dialog = new AddNoteDialogFragment();
                 dialog.show(getFragmentManager(), AddNoteDialogFragment.class.getSimpleName());
@@ -162,7 +160,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         noteRecyclerView.setHasFixedSize(true);
         noteRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
-        noteFirebaseRecyclerAdapter = new NoteFirebaseRecyclerAdapter(databaseReference.child("notes"));
+        noteFirebaseRecyclerAdapter = new NoteFirebaseRecyclerAdapter(notesDatabaseReference);
         noteRecyclerView.setAdapter(noteFirebaseRecyclerAdapter);
     }
 
@@ -173,14 +171,27 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         TextView textViewNameHeader = (TextView) headerView.findViewById(R.id.textViewNameHeader);
         TextView textViewEmailHeader = (TextView) headerView.findViewById(R.id.textViewEmailHeader);
 
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        textViewNameHeader.setText(currentUser.getDisplayName());
-        textViewEmailHeader.setText(currentUser.getEmail());
-        Glide.with(this)
-                .load(currentUser.getPhotoUrl())
-                .asBitmap()
-                .transform(new CropCircleTransformation(this))
-                .into(imageViewHeader);
+
+        //TODO: Fix & Refactor
+        textViewNameHeader.setText(sharedPreferences.getString(Constants.PREFERENCE_DISPLAY_NAME, "Desconocido"));
+        textViewEmailHeader.setText(sharedPreferences.getString(Constants.PREFERENCE_EMAIL, ""));
+
+        String avatarUrl = sharedPreferences.getString(Constants.PREFERENCE_PHOTO_URI, null);
+
+        if (avatarUrl != null) {
+            Glide.with(this)
+                    .load(avatarUrl)
+                    .asBitmap()
+                    .transform(new CropCircleTransformation(this))
+                    .into(imageViewHeader);
+        } else {
+            Glide.with(this)
+                    .load(R.mipmap.ic_launcher)
+                    .asBitmap()
+                    .transform(new CropCircleTransformation(this))
+                    .into(imageViewHeader);
+        }
+
 
     }
 
@@ -212,23 +223,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == RC_SIGN_IN) {
-            if (resultCode == RESULT_OK) {
-                FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-                User user = new User(
-                        usernameFromEmail(currentUser.getEmail()),
-                        currentUser.getEmail(),
-                        currentUser.getDisplayName(),
-                        currentUser.getPhotoUrl().toString());
-
-                databaseReference.child("users").child(currentUser.getUid()).setValue(user);
-
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
-            } else {
-                Log.e(TAG, "Ocurrió un error durante el login");
-            }
-        } else if (requestCode == RC_TAKE_PICTURE) {
+        if (requestCode == RC_TAKE_PICTURE) {
             if (resultCode == RESULT_OK) {
                 if (fileUri != null) {
                     Log.d(TAG, "Taking picture succeded");
@@ -237,17 +232,15 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                     Log.w(TAG, "File URI is null");
                 }
             } else {
-                Toast.makeText(this, "Taking picture failed.", Toast.LENGTH_SHORT).show();
+                showMessageToast("Taking picture failed.");
             }
         }
     }
 
     private void uploadFromUri(Uri fileUri) {
         Log.d(TAG, "uploadFromUri:src:" + fileUri.toString());
-        FirebaseStorage storage = FirebaseStorage.getInstance();
-        storageReference = storage.getReferenceFromUrl("gs://mi-libreta.appspot.com");
 
-        final StorageReference photoReference = storageReference.child("photos")
+        final StorageReference photoReference = photoStorageReference.child("photos")
                 .child(fileUri.getLastPathSegment());
         showProgressDialog();
         Log.d(TAG, "uploadFromUri:dst:" + photoReference.getPath());
@@ -257,8 +250,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 Log.w(TAG, "uploadFromUri:onFailure", e);
                 downloadUrl = null;
                 hideProgressDialog();
-                Toast.makeText(MainActivity.this, "Error: upload failed",
-                        Toast.LENGTH_SHORT).show();
+                String message = "Error: upload failed";
+                showMessageToast(message);
 
             }
         }).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -267,30 +260,27 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 Log.d(TAG, "uploadFromUri:onSuccess");
                 // Get the public download URL
                 downloadUrl = taskSnapshot.getMetadata().getDownloadUrl();
-
                 savePictureUrlAsANote(downloadUrl);
-
-                Toast.makeText(MainActivity.this, "upload completed! " + downloadUrl.toString(), Toast.LENGTH_SHORT).show();
+                showMessageToast("upload completed! " + downloadUrl.toString());
                 hideProgressDialog();
             }
         });
     }
 
     private void savePictureUrlAsANote(Uri downloadUrl) {
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
 
         //TODO: Corregir a  una mejor forma de obtener el timestamp
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedDate = df.format(new Date());
 
-        databaseReference.child("notes").push().setValue(
+        notesDatabaseReference.push().setValue(
                 new Note(
-                        currentUser.getDisplayName(),
+                        sharedPreferences.getString(Constants.PREFERENCE_DISPLAY_NAME, "Desconocido"),
                         "Foto",
                         downloadUrl.toString(),
-                        currentUser.getUid(),
+                        sharedPreferences.getString(Constants.PREFERENCE_UID, null),
                         formattedDate,
-                        currentUser.getPhotoUrl().toString()));
+                        sharedPreferences.getString(Constants.PREFERENCE_PHOTO_URI, "")));
     }
 
     @Override
@@ -310,7 +300,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 break;
             default:
                 break;
-
         }
 
         drawerLayout.closeDrawers();
@@ -321,7 +310,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         AuthUI.getInstance().signOut(MainActivity.this).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                startActivity(new Intent(MainActivity.this, MainActivity.class));
+                startActivity(new Intent(MainActivity.this, LoginActivity.class));
                 finish();
             }
         });
@@ -347,13 +336,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         }
     }
 
-    private String usernameFromEmail(String email) {
-        if (email.contains("@")) {
-            return email.split("@")[0];
-        } else {
-            return email;
-        }
-    }
 
     @Override
     protected void onDestroy() {
@@ -377,5 +359,10 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     @Override
     public void onPermissionsDenied(int requestCode, List<String> perms) {
 
+    }
+
+    private void showMessageToast(String message) {
+        Toast.makeText(MainActivity.this, message,
+                Toast.LENGTH_SHORT).show();
     }
 }

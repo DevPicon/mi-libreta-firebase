@@ -1,4 +1,4 @@
-package com.devpicon.android.milibreta.holders;
+package com.devpicon.android.milibreta.addNote;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
@@ -38,11 +38,21 @@ public class NoteViewHolder extends RecyclerView.ViewHolder {
 
     public void setAvatar(String url) {
         ImageView imageViewAvatar = (ImageView) view.findViewById(R.id.img_item_avatar);
-        Glide.with(view.getContext())
-                .load(url)
-                .asBitmap()
-                .transform(new CropCircleTransformation(view.getContext()))
-                .into(imageViewAvatar);
+        if (url != null && !url.isEmpty()) {
+            Glide.with(view.getContext())
+                    .load(url)
+                    .asBitmap()
+                    .transform(new CropCircleTransformation(view.getContext()))
+                    .into(imageViewAvatar);
+        } else {
+            Glide.with(view.getContext())
+                    .load(android.R.mipmap.sym_def_app_icon)
+                    .centerCrop()
+                    .placeholder(R.drawable.default_image)
+                    .crossFade()
+                    .into(imageViewAvatar);
+
+        }
     }
 
     public void setPicture(String url) {
@@ -54,6 +64,10 @@ public class NoteViewHolder extends RecyclerView.ViewHolder {
                     .placeholder(R.drawable.default_image)
                     .crossFade()
                     .into(imageViewAvatar);
+            imageViewAvatar.setVisibility(ImageView.VISIBLE);
+        } else {
+            ImageView imageViewAvatar = (ImageView) view.findViewById(R.id.img_item_picture);
+            imageViewAvatar.setVisibility(ImageView.GONE);
         }
     }
 

@@ -1,4 +1,4 @@
-package com.devpicon.android.milibreta.fragments;
+package com.devpicon.android.milibreta.addNote;
 
 import android.app.Dialog;
 import android.app.DialogFragment;
