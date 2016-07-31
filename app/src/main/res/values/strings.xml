@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Mi Libreta</string>
     <string name="action_settings">Configuración</string>
-    <string name="txt_add_note">Agregue el texto</string>
+    <string name="txt_add_note">Escriba su nota...</string>
     <string name="cancel">Cancelar</string>
     <string name="add">Agregar</string>
     <string name="rationale_storage_camera">Se tomara foto y cargara en el storage</string>

@@ -1,4 +1,4 @@
-package com.devpicon.android.milibreta.addNote;
+package com.devpicon.android.milibreta.notes;
 
 import com.devpicon.android.milibreta.R;
 import com.devpicon.android.milibreta.models.Note;

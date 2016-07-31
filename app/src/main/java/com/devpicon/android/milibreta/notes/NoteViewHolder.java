@@ -1,4 +1,4 @@
-package com.devpicon.android.milibreta.addNote;
+package com.devpicon.android.milibreta.notes;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
