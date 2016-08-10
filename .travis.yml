@@ -10,3 +10,5 @@ android:
 
 script:
    - ./gradlew build connectedCheck
+
+sudo: required
