@@ -24,6 +24,7 @@ public class MiLibretaApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
     }
 
     public FirebaseAuth getFirebaseAuth() {

@@ -1,9 +1,11 @@
 package com.devpicon.android.milibreta.notes;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -15,6 +17,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -28,18 +31,27 @@ import com.devpicon.android.milibreta.R;
 import com.devpicon.android.milibreta.addNote.AddNoteDialogFragment;
 import com.devpicon.android.milibreta.app.MiLibretaApplication;
 import com.devpicon.android.milibreta.login.LoginActivity;
+import com.devpicon.android.milibreta.ubicacion.GpsService;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 
+import java.util.List;
+
 import jp.wasabeef.glide.transformations.CropCircleTransformation;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity
         extends BaseActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+
+
+    private static final int RC_LOCATION_PERMS = 104;
 
     private Toolbar toolbar;
     private DrawerLayout drawerLayout;
@@ -67,6 +79,9 @@ public class MainActivity
         setNavigationHeader();
         setFirebaseRecyclerView();
         setAddNoteFAB();
+
+
+        startLocationService();
 
     }
 
@@ -217,6 +232,42 @@ public class MainActivity
     private void showMessageToast(String message) {
         Toast.makeText(MainActivity.this, message,
                 Toast.LENGTH_SHORT).show();
+    }
+
+
+    @AfterPermissionGranted(RC_LOCATION_PERMS)
+    private void startLocationService() {
+
+        Log.d(TAG, "----> startLocationService()");
+
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission
+                .ACCESS_COARSE_LOCATION};
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && !EasyPermissions.hasPermissions(this, permissions)) {
+            EasyPermissions.requestPermissions(this, "Se obtendran permisos",
+                    RC_LOCATION_PERMS, permissions);
+            return;
+        }
+
+        startService(new Intent(this, GpsService.class));
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> perms) {
+
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> perms) {
+
     }
 
 

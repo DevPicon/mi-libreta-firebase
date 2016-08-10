@@ -41,6 +41,7 @@ public class LoginActivity extends AppCompatActivity {
         login();
     }
 
+
     /**
      * https://developer.android.com/reference/android/content/Intent.html#FLAG_ACTIVITY_NEW_TASK
      */
@@ -145,4 +146,5 @@ public class LoginActivity extends AppCompatActivity {
             return email;
         }
     }
+
 }

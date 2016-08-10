@@ -194,7 +194,7 @@ public class AddNoteDialogFragment extends DialogFragment implements
 
         Note note = new Note(
                 sharedPreferences.getString(Constants.PREFERENCE_DISPLAY_NAME, "Desconocido"),
-                "Foto",
+                "",
                 downloadUrl.toString(),
                 sharedPreferences.getString(Constants.PREFERENCE_UID, null),
                 formattedDate,
